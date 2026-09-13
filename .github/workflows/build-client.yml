@@ -1,0 +1,59 @@
+name: Build TurovFy Client APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Чек-аут репозитория
+        uses: actions/checkout@v4
+
+      - name: Установка Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Настройка Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Создание package.json если отсутствует
+        run: |
+          if [ ! -f package.json ]; then
+            echo '{"name": "turovfy-mobile", "version": "1.0.0", "dependencies": {"@capacitor/android": "^6.0.0", "@capacitor/cli": "^6.0.0", "@capacitor/core": "^6.0.0"}}' > package.json
+          fi
+
+      - name: Создание capacitor.config.json если отсутствует
+        run: |
+          if [ ! -f capacitor.config.json ]; then
+            echo '{"appId": "com.turovfy.app", "appName": "TurovFy", "webDir": ".", "bundledWebRuntime": false, "server": {"androidScheme": "https", "cleartext": true}, "android": {"allowMixedContent": true, "captureInput": true}}' > capacitor.config.json
+          fi
+
+      - name: Установка зависимостей Capacitor
+        run: |
+          npm install
+          npx cap add android
+          npx cap sync android
+
+      - name: Добавление сетевых разрешений Android
+        run: |
+          sed -i '/<application/i <uses-permission android:name="android.permission.INTERNET" />\n<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n<uses-permission android:name="android.permission.WAKE_LOCK" />' android/app/src/main/AndroidManifest.xml
+
+      - name: Сборка Debug APK через Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Загрузка готового APK в артефакты
+        uses: actions/upload-artifact@v4
+        with:
+          name: TurovFy-Client-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
