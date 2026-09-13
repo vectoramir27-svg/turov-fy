@@ -5,7 +5,7 @@ const GOOGLE_CLIENT_ID = "626469255866-clqnscvcv71s9baj7rs32u49ekmmertk.apps.goo
 // Как только получишь ссылку в консоли Cloudflare, вставь её сюда вместо пустой строки:
 // Пример: const API_BASE_URL = "https://your-tunnel-name.trycloudflare.com";
 // =========================================================================
-const API_BASE_URL = ""; 
+const API_BASE_URL = "http://144.31.192.63:8000"; 
 
 // Глобальные переменные состояния
 let currentUser = null;
