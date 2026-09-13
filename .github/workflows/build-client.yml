@@ -27,7 +27,6 @@ jobs:
       - name: Подготовка структуры веб-директории для Capacitor
         run: |
           mkdir -p www
-          # Перемещаем index.html и папку assets в папку www для Capacitor
           if [ -f index.html ]; then cp index.html www/; fi
           if [ -d assets ]; then cp -r assets www/; fi
 
@@ -44,9 +43,23 @@ jobs:
           npx cap add android
           npx cap update android
 
-      - name: Добавление сетевых разрешений Android
+      - name: Настройка сетевых разрешений и Cleartext HTTP
         run: |
-          sed -i '/<application/i <uses-permission android:name="android.permission.INTERNET" />\n<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n<uses-permission android:name="android.permission.WAKE_LOCK" />' android/app/src/main/AndroidManifest.xml
+          mkdir -p android/app/src/main/res/xml
+          echo '<?xml version="1.0" encoding="utf-8"?>
+          <network-security-config>
+              <base-config cleartextTrafficPermitted="true">
+                  <trust-anchors>
+                      <certificates src="system" />
+                  </trust-anchors>
+              </base-config>
+          </network-security-config>' > android/app/src/main/res/xml/network_security_config.xml
+
+          sed -i '/<application/c\<application android:networkSecurityConfig="@xml/network_security_config" android:usesCleartextTraffic="true" android:appComponentFactory="androidx.core.app.CoreComponentFactory" style="@style/AppTheme">' android/app/src/main/AndroidManifest.xml
+          
+          if ! grep -q "android.permission.INTERNET" android/app/src/main/AndroidManifest.xml; then
+            sed -i '/<application/i <uses-permission android:name="android.permission.INTERNET" />\n<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
+          fi
 
       - name: Сборка Debug APK через Gradle
         run: |
