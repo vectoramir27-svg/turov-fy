@@ -34,7 +34,6 @@ jobs:
         run: |
           npm install
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init TurovFy com.turovfy.app --web-dir . --yes
           npx cap add android
           npx cap update android
 
