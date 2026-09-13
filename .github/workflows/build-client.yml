@@ -30,10 +30,10 @@ jobs:
           mkdir -p www
           cp index.html www/
           cp -r assets www/
-          echo "Веб-ресурсы подготовлены:"
+          echo "Файлы веб-интерфейса подготовлены:"
           ls -la www
 
-      - name: Создание capacitor.config.json с сетевыми правилами
+      - name: Создание capacitor.config.json
         run: |
           cat << 'EOF' > capacitor.config.json
           {
@@ -59,7 +59,7 @@ jobs:
             echo '{"name": "turovfy-mobile", "version": "1.0.0"}' > package.json
           fi
 
-      - name: Установка Capacitor и синхронизация
+      - name: Установка Capacitor и генерация проекта
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap add android || true
@@ -87,16 +87,9 @@ jobs:
           # Применяем конфигурацию к манифесту
           sed -i 's/<application/<application android:usesCleartextTraffic="true" android:networkSecurityConfig="@xml\/network_security_config"/' android/app/src/main/AndroidManifest.xml
 
-          # Гарантируем права на интернет
+          # Разрешения на работу с сетью
           if ! grep -q "android.permission.INTERNET" android/app/src/main/AndroidManifest.xml; then
             sed -i '/<application/i <uses-permission android:name="android.permission.INTERNET" />\n<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
-          fi
-
-      - name: Разрешение Mixed Content в MainActivity
-        run: |
-          MAIN_ACTIVITY="android/app/src/main/java/com/turovfy/app/MainActivity.java"
-          if [ -f "$MAIN_ACTIVITY" ]; then
-            sed -i '/public class MainActivity extends BridgeActivity {/a \    @Override\n    public void onStart() {\n        super.onStart();\n        android.webkit.WebView webView = (android.webkit.WebView) this.getBridge().getWebView();\n        if (webView != null) {\n            webView.getSettings().setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);\n        }\n    }' "$MAIN_ACTIVITY"
           fi
 
       - name: Сборка Debug APK через Gradle
