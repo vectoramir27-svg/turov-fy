@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>TurovFy — Unified Streaming Engine</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Внешние стили -->
+  <link rel="stylesheet" href="/assets/css/style.css">
+  
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <div class="ambient-glow" id="ambientGlow"></div>
+  <div class="grid-background"></div>
+  <canvas id="paletteCanvas" style="display: none;"></canvas>
+
+  <!-- Навбар (ПК) -->
+  <nav class="desktop-nav">
+    <div class="nav-inner">
+      <div class="logo" onclick="goToHome()">
+        <div class="logo-img-wrapper">
+          <img src="/assets/logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'">
+        </div>
+        TUROV<span>FY</span>
+      </div>
+      
+      <div class="nav-pill">
+        <div class="nav-link active" id="tabNavCatalog" onclick="goToHome()">Каталог</div>
+        <div class="nav-link" id="tabNavPlaylists" onclick="switchTab('playlists')">Плейлисты</div>
+        <div class="nav-link" id="tabNavEq" onclick="switchTab('eq')">Эквалайзер</div>
+        <div class="nav-link" id="tabNavSettings" onclick="switchTab('settings')">Настройки</div>
+      </div>
+
+      <div id="authContainer">
+        <button class="auth-btn" onclick="openAuthModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+          Войти
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- МОБИЛЬНЫЙ ОСТРОВОК НАВИГАЦИИ -->
+  <div class="mobile-island-wrapper">
+    <nav class="mobile-island-nav">
+      <div class="island-tabs-group" id="islandTabsGroup">
+        <div class="liquid-pill-indicator" id="liquidIndicator"></div>
+
+        <button class="island-btn active" id="iNavCatalog" onclick="goToHome()" title="Главная">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </button>
+
+        <button class="island-btn" id="iNavPlaylists" onclick="switchTab('playlists')" title="Плейлисты">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </button>
+
+        <button class="island-btn" id="iNavEq" onclick="switchTab('eq')" title="Эквалайзер">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x1="12" y1="21" y2="12"/><line x1="12" x1="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="1" x2="7" y1="14" y2="14"/><line x1="9" x2="15" y1="8" y2="8"/><line x1="17" x2="23" y1="16" y2="16"/></svg>
+        </button>
+
+        <button class="island-btn" id="iNavSettings" onclick="switchTab('settings')" title="Настройки">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+
+      <div class="island-sep"></div>
+
+      <button class="island-special-btn" onclick="toggleKaraoke()" title="Текст песни">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x1="12" y1="19" y2="22"/></svg>
+      </button>
+    </nav>
+  </div>
+
+  <!-- СЕКЦИЯ 1: КАТАЛОГ -->
+  <section id="tabCatalog" class="tab-section active">
+    <div class="wave-hero-container" id="catalogWaveContainer">
+      <div class="wave-card" id="waveCard">
+        <svg class="wave-graphic-bg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+          <path d="M -50,60 Q 150,0 320,120 T 450,220" />
+          <path d="M -20,180 Q 180,90 380,240 T 450,300" />
+        </svg>
+
+        <div class="wave-header-row">
+          <div class="wave-title-box">
+            <h1>Моя<br>волна</h1>
+          </div>
+          <div class="beta-badge" title="Функция находится в бета-тестировании">БЕТА-ТЕСТ</div>
+        </div>
+
+        <div class="wave-bottom-row">
+          <div class="wave-mode-badge" onclick="startMyWave()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="9" width="3" height="6"/><rect x="10" y="5" width="3" height="14"/><rect x="16" y="8" width="3" height="8"/></svg>
+            <span>Чарт и рекомендации</span>
+          </div>
+
+          <button class="wave-big-play-btn" id="waveBigBtn" onclick="toggleWavePlay()">
+            <svg id="waveBigIcon" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-container">
+      <div class="search-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2" style="margin-right: 12px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Поиск исполнителя, названия трека..." autocomplete="off">
+        <span class="search-kbd">⌘K</span>
+      </div>
+    </div>
+
+    <div class="tracks-wrapper">
+      <div id="searchResultsArea" style="display: none;">
+        <div class="section-title">
+          <span id="labelSearchResults">Результаты поиска</span>
+        </div>
+        <div class="search-results-list" id="searchResultsList"></div>
+      </div>
+
+      <div id="standardCatalogArea">
+        <div class="section-title">
+          <span>Для вас</span>
+        </div>
+        <div class="horizontal-carousel" id="forYouCarousel"></div>
+
+        <div class="section-title">
+          <span>Релизы</span>
+        </div>
+        <div class="horizontal-carousel" id="releasesCarousel"></div>
+
+        <div class="section-title">
+          <span>Нишевое</span>
+        </div>
+        <div class="horizontal-carousel" id="nicheCarousel"></div>
+
+        <div class="section-title">
+          <span>Популярное</span>
+        </div>
+        <div class="horizontal-carousel" id="popularCarousel"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- СЕКЦИЯ 2: СТРАНИЦА АРТИСТА -->
+  <section id="tabArtist" class="tab-section">
+    <div class="artist-page-container">
+      <div class="artist-header-card">
+        <div class="artist-avatar-wrap">
+          <img id="artistAvatar" class="artist-avatar-img" referrerpolicy="no-referrer" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' fill='%2318181b'/%3E">
+        </div>
+        <div class="artist-info-box">
+          <div class="artist-title-row">
+            <h1 id="artistNameTitle" class="artist-name-title">Исполнитель</h1>
+          </div>
+
+          <div class="artist-actions-row">
+            <button class="artist-play-all-btn" onclick="playAllArtistTracks()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Слушать
+            </button>
+            <button class="preset-btn" onclick="goToHome()">В каталог</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <h3 style="font-size: 20px; font-weight: 700;">Треки исполнителя</h3>
+      </div>
+
+      <div class="tracks-grid" id="artistTracksGrid"></div>
+    </div>
+  </section>
+
+  <!-- СЕКЦИЯ 3: ПЛЕЙЛИСТЫ -->
+  <section id="tabPlaylists" class="tab-section">
+    <div class="playlists-container">
+      
+      <div class="pl-hero-row">
+        <div class="pl-hero-card favs" onclick="openFavoritesPlaylist()">
+          <div class="pl-hero-top">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </div>
+          <div class="pl-hero-bottom">
+            <h4>Любимые</h4>
+            <p id="favsTracksCountText">0 треков</p>
+          </div>
+        </div>
+
+        <div class="pl-hero-card downloads" onclick="openDownloadedPlaylist()">
+          <div class="pl-hero-top">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <div class="pl-hero-bottom">
+            <h4>Скачанные</h4>
+            <p id="downloadedTracksCountText">0 треков</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="pl-action-bar">
+        <div class="pl-left-actions">
+          <button class="circle-icon-btn" onclick="createPlaylist()" title="Создать плейлист">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+
+          <button class="circle-icon-btn" onclick="openImportOptionsModal()" title="Импортировать список треков">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/>
+              <path d="M12 12v9"/>
+              <path d="m8 17 4 4 4-4"/>
+            </svg>
+          </button>
+
+          <button class="circle-icon-btn" onclick="renderPlaylists(); showToast('Медиатека обновлена');" title="Обновить">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          </button>
+        </div>
+
+        <div class="pl-right-filters">
+          <button class="pl-pill-btn active" id="plFilterAll" onclick="filterPlaylistsView('all')">Все</button>
+          <button class="pl-pill-btn" id="plFilterPlaylists" onclick="filterPlaylistsView('playlists')">Плейлисты</button>
+        </div>
+      </div>
+
+      <div class="tracks-grid" id="playlistsGrid"></div>
+      
+      <div id="playlistTracksView" style="margin-top: 20px; display: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <h3 id="openedPlaylistTitle" style="font-size: 20px; font-weight: 700;"></h3>
+          <button class="preset-btn" onclick="closePlaylistView()">Назад к плейлистам</button>
+        </div>
+        <div class="tracks-grid" id="playlistTracksGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- СЕКЦИЯ 4: ЭКВАЛАЙЗЕР -->
+  <section id="tabEq" class="tab-section">
+    <div class="eq-container">
+      <div class="eq-header">
+        <div>
+          <h2>DSP Equalizer</h2>
+          <p style="font-size: 13px; color: var(--text-muted);">Real-time WebAudio parametric filters</p>
+        </div>
+        <div class="eq-presets">
+          <button class="preset-btn" id="btnPreset-flat" onclick="applyPreset('flat')">Flat</button>
+          <button class="preset-btn" id="btnPreset-bass" onclick="applyPreset('bass')">Bass Boost</button>
+          <button class="preset-btn" id="btnPreset-vocal" onclick="applyPreset('vocal')">Vocal</button>
+          <button class="preset-btn" id="btnPreset-electro" onclick="applyPreset('electro')">Electronic</button>
+        </div>
+      </div>
+
+      <div class="eq-sliders">
+        <div class="eq-band">
+          <span class="eq-val" id="eqVal0">0 dB</span>
+          <input type="range" class="eq-slider" orient="vertical" min="-12" max="12" value="0" step="1" oninput="changeEqBand(0, this.value)">
+          <span class="eq-label">60 Hz</span>
+        </div>
+        <div class="eq-band">
+          <span class="eq-val" id="eqVal1">0 dB</span>
+          <input type="range" class="eq-slider" orient="vertical" min="-12" max="12" value="0" step="1" oninput="changeEqBand(1, this.value)">
+          <span class="eq-label">250 Hz</span>
+        </div>
+        <div class="eq-band">
+          <span class="eq-val" id="eqVal2">0 dB</span>
+          <input type="range" class="eq-slider" orient="vertical" min="-12" max="12" value="0" step="1" oninput="changeEqBand(2, this.value)">
+          <span class="eq-label">1 kHz</span>
+        </div>
+        <div class="eq-band">
+          <span class="eq-val" id="eqVal3">0 dB</span>
+          <input type="range" class="eq-slider" orient="vertical" min="-12" max="12" value="0" step="1" oninput="changeEqBand(3, this.value)">
+          <span class="eq-label">4 kHz</span>
+        </div>
+        <div class="eq-band">
+          <span class="eq-val" id="eqVal4">0 dB</span>
+          <input type="range" class="eq-slider" orient="vertical" min="-12" max="12" value="0" step="1" oninput="changeEqBand(4, this.value)">
+          <span class="eq-label">12 kHz</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- СЕКЦИЯ 5: НАСТРОЙКИ -->
+  <section id="tabSettings" class="tab-section">
+    <div class="settings-wrapper">
+
+      <div id="settingsGuestView" class="settings-guest-placeholder">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <h3 style="font-size: 20px; font-weight: 700;">Вход в настройки</h3>
+        <p style="font-size: 13.5px; color: var(--text-muted); max-width: 320px;">Настройки профиля и безопасности доступны после входа в аккаунт.</p>
+        <button class="btn-main-action" style="padding: 12px 28px; width: auto;" onclick="openAuthModal()">Войти</button>
+      </div>
+
+      <!-- Главный список настроек -->
+      <div id="settingsMainView" class="settings-subpage active">
+        <div class="settings-user-card" onclick="openProfileView()">
+          <div class="suc-left">
+            <div class="suc-avatar" id="settingsUserAvatar">M</div>
+            <div class="suc-names">
+              <h3 id="settingsUserName">maestrov</h3>
+              <p id="settingsUserTag">@maestrov</p>
+            </div>
+          </div>
+          <svg class="suc-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+
+        <div class="settings-group" style="margin-top: 14px;">
+          <div class="settings-group-title">Профиль</div>
+          <div class="settings-card">
+            <div class="settings-row" onclick="openEditProfileView()">
+              <div class="sr-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <span>Изменить</span>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="settings-row" onclick="showToast('В разработке')">
+              <div class="sr-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 3 18 3 22 9 12 22 2 9 6 3"/></svg>
+                <span>Подписка</span>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="settings-row" onclick="openSecurityView()">
+              <div class="sr-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span>Безопасность</span>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="settings-row" onclick="showToast('В разработке')">
+              <div class="sr-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span>Приватность</span>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group" style="margin-top: 14px;">
+          <div class="settings-group-title">Приложение</div>
+          <div class="settings-card">
+            <div class="settings-row" onclick="openGeneralAppSettingsView()">
+              <div class="sr-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Основные</span>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="settings-row" onclick="openAudioSettingsView()">
+              <div class="sr-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                <span>Аудио</span>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="settings-row" onclick="openStorageSettingsView()">
+              <div class="sr-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                <span>Хранилище</span>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="settings-row" style="cursor: default;">
+              <div class="sr-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span>Уведомления</span>
+              </div>
+              <label class="ios-switch">
+                <input type="checkbox" id="notifSwitch" checked onchange="showToast(this.checked ? 'Уведомления включены' : 'Уведомления отключены')">
+                <span class="ios-slider"></span>
+              </label>
+            </div>
+            <div class="settings-row" onclick="toggleLanguage()">
+              <div class="sr-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span>Язык</span>
+              </div>
+              <div class="sr-right">
+                <span id="langFlag" style="font-size: 16px;">🇷🇺</span>
+              </div>
+            </div>
+            <div class="settings-row" onclick="showToast('TurovFy v1.0.0 — актуальная сборка')">
+              <div class="sr-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span>Версия</span>
+              </div>
+              <div class="sr-right">
+                <span>v1.0.0</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <button class="btn-main-action" id="settingsAuthActionBtn" onclick="logoutUser()" style="width: 100%;">Выйти из аккаунта</button>
+        </div>
+      </div>
+
+      <!-- ПОДСТРАНИЦА: ОСНОВНЫЕ НАСТРОЙКИ -->
+      <div id="settingsGeneralView" class="settings-subpage">
+        <div class="profile-subview">
+          <div class="profile-nav-header">
+            <button class="circle-icon-btn" onclick="openSettingsMainView()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <h3 style="font-size: 17px; font-weight: 700; color: #fff;">Основные</h3>
+            <div style="width: 42px;"></div>
+          </div>
+
+          <div class="settings-card" style="border-radius: 24px; padding: 4px 0;">
+            <div class="main-settings-item">
+              <div class="msi-text">
+                <span class="msi-title">Авто плей</span>
+                <span class="msi-desc">Последний трек включится после перезахода</span>
+              </div>
+              <label class="ios-switch">
+                <input type="checkbox" id="prefAutoPlay" onchange="handlePrefChange('autoPlay', this.checked)">
+                <span class="ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="main-settings-item">
+              <div class="msi-text">
+                <span class="msi-title">Похожие треки</span>
+                <span class="msi-desc">Автоматически добавлять похожие треки в очередь</span>
+              </div>
+              <label class="ios-switch">
+                <input type="checkbox" id="prefSimilarTracks" checked onchange="handlePrefChange('similarTracks', this.checked)">
+                <span class="ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="main-settings-item">
+              <div class="msi-text">
+                <span class="msi-title">Восстановление очереди</span>
+                <span class="msi-desc">Восстанавливать очередь после перезапуска</span>
+              </div>
+              <label class="ios-switch">
+                <input type="checkbox" id="prefRestoreQueue" onchange="handlePrefChange('restoreQueue', this.checked)">
+                <span class="ios-slider"></span>
+              </label>
+            </div>
+
+            <div class="main-settings-item">
+              <div class="msi-text">
+                <span class="msi-title">Канвас</span>
+                <span class="msi-desc">Показывать анимированные зацикленные видеоролики вместо обложек треков</span>
+              </div>
+              <label class="ios-switch">
+                <input type="checkbox" id="prefCanvas" onchange="handlePrefChange('canvas', this.checked)">
+                <span class="ios-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ПОДСТРАНИЦА: АУДИО НАСТРОЙКИ -->
+      <div id="settingsAudioView" class="settings-subpage">
+        <div class="profile-subview">
+          <div class="profile-nav-header">
+            <button class="circle-icon-btn" onclick="openSettingsMainView()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <h3 style="font-size: 17px; font-weight: 700; color: #fff;">Аудио</h3>
+            <div style="width: 42px;"></div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title">Качество звука</div>
+            <div class="settings-card">
+              <div class="settings-row" onclick="setAudioQuality('low')">
+                <div class="sr-left">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M17 2l-5 5-5-5"/><circle cx="12" cy="14" r="3"/></svg>
+                  <div>
+                    <div style="font-size: 15px; font-weight: 600;">Низкое</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">192 kbps</div>
+                  </div>
+                </div>
+                <div class="sr-right" id="check-low" style="display: none;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+
+              <div class="settings-row" onclick="setAudioQuality('medium')">
+                <div class="sr-left">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                  <div>
+                    <div style="font-size: 15px; font-weight: 600;">Среднее</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">256 kbps</div>
+                  </div>
+                </div>
+                <div class="sr-right" id="check-medium">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+
+              <div class="settings-row" onclick="setAudioQuality('high')">
+                <div class="sr-left">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/></svg>
+                  <div>
+                    <div style="font-size: 15px; font-weight: 600;">Высокое</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">320 kbps</div>
+                  </div>
+                </div>
+                <div class="sr-right" id="check-high" style="display: none;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+
+              <div class="settings-row" onclick="setAudioQuality('lossless')">
+                <div class="sr-left">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 10v4M6 6v12M10 3v18M14 8v8M18 5v14M22 10v4"/></svg>
+                  <div>
+                    <div style="font-size: 15px; font-weight: 600;">Без потерь</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">1411 kbps</div>
+                  </div>
+                </div>
+                <div class="sr-right" id="check-lossless" style="display: none;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group" style="margin-top: 14px;">
+            <div class="settings-group-title">Кроссфейд</div>
+            <div class="settings-card" style="padding: 4px 0;">
+              <div class="main-settings-item">
+                <div class="msi-text">
+                  <span class="msi-title">Бесшовное воспроизведение</span>
+                  <span class="msi-desc">Плавный переход между треками без паузы</span>
+                </div>
+                <label class="ios-switch">
+                  <input type="checkbox" id="prefGapless" checked onchange="handlePrefChange('gapless', this.checked)">
+                  <span class="ios-slider"></span>
+                </label>
+              </div>
+
+              <div class="main-settings-item">
+                <div class="msi-text">
+                  <span class="msi-title">Кроссфейд</span>
+                  <span class="msi-desc">Плавное сведение треков (затухание 2.5 сек)</span>
+                </div>
+                <label class="ios-switch">
+                  <input type="checkbox" id="prefCrossfade" onchange="handlePrefChange('crossfade', this.checked)">
+                  <span class="ios-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group" style="margin-top: 14px;">
+            <div class="settings-group-title">Нормализация громкости</div>
+            <div class="settings-card" style="padding: 4px 0;">
+              <div class="main-settings-item">
+                <div class="msi-text">
+                  <span class="msi-title">Нормализация громкости</span>
+                  <span class="msi-desc">Одинаковый уровень громкости для всех треков</span>
+                </div>
+                <label class="ios-switch">
+                  <input type="checkbox" id="prefNormalization" onchange="handlePrefChange('normalization', this.checked)">
+                  <span class="ios-slider"></span>
+                </label>
+              </div>
+
+              <div class="settings-row" onclick="toggleAudioDucking()">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                  <div>
+                    <div style="font-size: 14.5px; font-weight: 600;">При уведомлении</div>
+                    <div style="font-size: 12px; color: var(--text-muted);" id="duckingStateText">Заглушать</div>
+                  </div>
+                </div>
+                <div class="sr-right">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ПОДСТРАНИЦА: ХРАНИЛИЩЕ -->
+      <div id="settingsStorageView" class="settings-subpage">
+        <div class="profile-subview">
+          <div class="profile-nav-header">
+            <button class="circle-icon-btn" onclick="openSettingsMainView()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <h3 style="font-size: 17px; font-weight: 700; color: #fff;">Хранилище</h3>
+            <div style="width: 42px;"></div>
+          </div>
+
+          <div class="settings-card" style="align-items: center; justify-content: center; padding: 36px 20px; text-align: center; gap: 8px;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #ffffff; margin-bottom: 8px; box-shadow: 0 0 10px rgba(255,255,255,0.8);"></div>
+            <div id="storageSizeText" style="font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff;">0 B</div>
+            <div id="storageFilesText" style="font-size: 13px; color: var(--text-muted);">0 files</div>
+            <div id="storageUsedPctText" style="font-size: 12px; color: var(--text-sub); font-weight: 600;">1% used</div>
+          </div>
+
+          <div class="settings-group" style="margin-top: 14px;">
+            <div class="settings-group-title">Кэширование</div>
+            <div class="settings-card">
+              <div class="settings-row" onclick="toggleCachingSetting()">
+                <div class="sr-left">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                  <div>
+                    <div style="font-size: 15px; font-weight: 600;">Кэширование</div>
+                    <div style="font-size: 12px; color: var(--text-muted);" id="cachingStatusDesc">Выключено</div>
+                  </div>
+                </div>
+                <div class="sr-right" id="cachingIconStatus">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group" style="margin-top: 14px;">
+            <div class="settings-group-title">Очистка данных</div>
+            <div class="settings-card">
+              <div class="settings-row" onclick="clearCachedTracks()">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                  <div>
+                    <div style="font-size: 15px; font-weight: 600;">Треки</div>
+                    <div style="font-size: 12px; color: var(--text-muted);" id="cachedTracksCount">0</div>
+                  </div>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+
+              <div class="settings-row" onclick="clearOfflineMedia()">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <div>
+                    <div style="font-size: 15px; font-weight: 600;">Оффлайн</div>
+                    <div style="font-size: 12px; color: var(--text-muted);" id="offlineMediaCount">0</div>
+                  </div>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+
+              <div class="settings-row" onclick="clearLyricsCache()">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x1="19" y1="12" y2="22"/></svg>
+                  <div>
+                    <div style="font-size: 15px; font-weight: 600;">Тексты</div>
+                    <div style="font-size: 12px; color: var(--text-muted);" id="cachedLyricsCount">0</div>
+                  </div>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px;">
+            <button class="btn-main-action" onclick="clearAllStorageCache()" style="width: 100%; background: #1c1c1e; color: #ffffff; border: 1px solid var(--border);">Очистить всё</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ПОДСТРАНИЦА: ПРОФИЛЬ -->
+      <div id="settingsProfileView" class="settings-subpage">
+        <div class="profile-subview">
+          <div class="profile-nav-header">
+            <button class="circle-icon-btn" onclick="openSettingsMainView()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="circle-icon-btn" onclick="shareProfile()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+          </div>
+
+          <div class="profile-hero">
+            <div class="profile-big-avatar" id="pvAvatar">M</div>
+            <div class="profile-badge-row">
+              <div class="profile-shield-btn" onclick="openXpModal()" title="Уровень активности">
+                <svg viewBox="0 0 24 28" fill="none">
+                  <path d="M12 1L2 5.2V13.8C2 20.1 6.3 25.9 12 27.5C17.7 25.9 22 20.1 22 13.8V5.2L12 1Z" fill="#FFFFFF"/>
+                </svg>
+                <span class="profile-shield-lvl" id="profileShieldLevel">1</span>
+              </div>
+              <h2 class="profile-name-text" id="pvName">maestrov</h2>
+            </div>
+            <div class="profile-username-tag" id="pvTag">@maestrov</div>
+          </div>
+
+          <div class="profile-date-grid">
+            <div class="pd-row">
+              <div class="pd-item-left">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span id="pvRegDate">11 сентября 2026 г.</span>
+              </div>
+              <span class="pd-number" id="pvUserNumber">#1</span>
+            </div>
+            <div class="pd-row">
+              <div class="pd-item-left">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span id="pvLastSeen">11 сентября, 11:06</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Карточка баланса с нотой (открывает Обзор) -->
+          <div class="profile-balance-card" onclick="openOverviewView()" style="cursor: pointer; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="balance-val" id="pvBalance">0</span>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color: #ffffff;"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title">Предметы</div>
+            <div class="settings-card">
+              <div class="settings-row" onclick="showToast('В разработке')">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <span>Аукцион</span>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+              <div class="settings-row" onclick="showToast('В разработке')">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                  <span>Инвентарь</span>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+              <div class="settings-row" onclick="showToast('В разработке')">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                  <span>Магазин</span>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ПОДСТРАНИЦА: ОБЗОР -->
+      <div id="settingsOverviewView" class="settings-subpage">
+        <div class="profile-subview">
+          <div class="profile-nav-header">
+            <button class="circle-icon-btn" onclick="openProfileView()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div style="width: 42px;"></div>
+          </div>
+
+          <div class="profile-hero" style="margin-top: -10px; margin-bottom: 20px;">
+            <div class="profile-big-avatar" id="ovAvatar" style="width: 110px; height: 110px; font-size: 44px;">M</div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title">Обзор</div>
+            <div class="settings-card" style="padding: 22px 14px; flex-direction: row; align-items: center; justify-content: space-around;">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; text-align: center;">
+                <span id="statPlaysCount" style="font-size: 24px; font-weight: 800; color: #ffffff;">0</span>
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Прослушиваний</span>
+              </div>
+              <div style="width: 1px; height: 36px; background: var(--border);"></div>
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; text-align: center;">
+                <span id="statTracksCount" style="font-size: 24px; font-weight: 800; color: #ffffff;">0</span>
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Треков</span>
+              </div>
+              <div style="width: 1px; height: 36px; background: var(--border);"></div>
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; text-align: center;">
+                <span id="statMinutesCount" style="font-size: 24px; font-weight: 800; color: #ffffff;">0</span>
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">мин</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ПОДСТРАНИЦА: РЕДАКТИРОВАНИЕ -->
+      <div id="settingsEditView" class="settings-subpage">
+        <div class="edit-subview">
+          <div class="edit-avatar-box">
+            <div class="edit-avatar-wrap" id="evAvatarWrap" onclick="triggerAvatarUpload()">
+              <div id="evAvatarLetter" style="font-size: 36px; font-weight: 800;">M</div>
+              <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="handleAvatarSelected(event)">
+            </div>
+            <div class="edit-badge-pencil" onclick="triggerAvatarUpload()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+          </div>
+
+          <div class="edit-field-group">
+            <div class="edit-field-header">
+              <span>Никнейм</span>
+              <span id="nickCount">8/32</span>
+            </div>
+            <input type="text" id="editNicknameInput" class="edit-input-box" value="maestrov" maxlength="32" oninput="updateCharCounts()">
+          </div>
+
+          <div class="edit-field-group">
+            <div class="edit-field-header">
+              <span>Юзернейм</span>
+              <span id="userCount">8/12</span>
+            </div>
+            <input type="text" id="editUsernameInput" class="edit-input-box" value="maestrov" maxlength="12" oninput="updateCharCounts()">
+          </div>
+
+          <div class="edit-field-group">
+            <div class="edit-field-header">
+              <span>О себе</span>
+              <span id="bioCount">23/32</span>
+            </div>
+            <input type="text" id="editBioInput" class="edit-input-box" value="Новый пользователь TurovFy" maxlength="32" oninput="updateCharCounts()">
+          </div>
+
+          <div class="edit-field-group">
+            <div class="edit-field-header">
+              <span>Статус</span>
+              <span id="statusCount">0/32</span>
+            </div>
+            <input type="text" id="editStatusInput" class="edit-input-box" placeholder="Что нового?" maxlength="32" oninput="updateCharCounts()">
+          </div>
+
+          <div class="settings-group" style="margin-top: 6px;">
+            <div class="settings-group-title">Интеграции</div>
+            <div class="settings-card">
+              <div class="settings-row" onclick="startTelegramBotLinking()" role="button" style="cursor: pointer;">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  <div>
+                    <div style="font-size: 14.5px;">Telegram</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted);" id="tgUsernameDisplay">Не привязан</div>
+                  </div>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+            <button class="btn-main-action" onclick="saveProfileChanges()">Сохранить</button>
+            <button class="btn-sec-action" onclick="openSettingsMainView()">Назад</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ПОДСТРАНИЦА: БЕЗОПАСНОСТЬ -->
+      <div id="settingsSecurityView" class="settings-subpage">
+        <div class="profile-subview">
+          <div class="profile-nav-header">
+            <button class="circle-icon-btn" onclick="openSettingsMainView()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <h3 style="font-size: 17px; font-weight: 700; color: #fff;">Безопасность</h3>
+            <div style="width: 42px;"></div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title">Пароль</div>
+            <div class="settings-card">
+              <div class="settings-row" onclick="promptChangePassword()">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 2-2 2m-1.5 1.5L14 9l-1.5-1.5M10 13l-4 4-2-2-2 2 3 3 6-6M10 13l4-4"/></svg>
+                  <div>
+                    <div style="font-size: 14.5px;">Текущий пароль</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted);">••••••••</div>
+                  </div>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+              <div class="settings-row" onclick="promptChangeEmail()">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <div>
+                    <div style="font-size: 14.5px;">Новая почта</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted);" id="secEmailDisplay">user@gmail.com</div>
+                  </div>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title">Привязанные аккаунты</div>
+            <div class="settings-card">
+              <!-- Google -->
+              <div class="settings-row" style="cursor: default;">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                  <div>
+                    <div style="font-size: 14.5px;">Google</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted);" id="secGoogleEmail">user@gmail.com</div>
+                  </div>
+                </div>
+                <button class="btn-trash-icon" onclick="showToast('Основной аккаунт входа нельзя отвязать')" title="Удалить">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+
+              <!-- Telegram: при клике в любое место строки открывает окно привязки -->
+              <div class="settings-row" onclick="startTelegramBotLinking()" role="button" style="cursor: pointer;">
+                <div class="sr-left">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  <div>
+                    <div style="font-size: 14.5px; font-weight: 600;">Telegram</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted);" id="secTelegramTag">Не привязан</div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button type="button" class="btn-trash-icon" id="secTgUnlinkBtn" onclick="unlinkTelegram(event)" title="Отвязать" style="display: none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-title">Устройства</div>
+            <div class="settings-card">
+              <div class="settings-row" style="cursor: default;">
+                <div class="sr-left">
+                  <span id="secDeviceIcon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                  </span>
+                  <div>
+                    <div style="font-size: 14.5px;" id="secDeviceName">Определение...</div>
+                    <div style="font-size: 11.5px; color: var(--text-muted);" id="secDeviceType">Активно сейчас</div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="device-online-dot"></span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ДОК-ПЛЕЕР -->
+  <div class="dock-player">
+    <div class="dock-left">
+      <div class="dock-cover-wrap" onclick="openFullscreenPlayer()" title="Развернуть">
+        <img id="dockCover" class="dock-cover" referrerpolicy="no-referrer" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect width='100%25' height='100%25' fill='%2318181b'/%3E%3C/svg%3E">
+        <div class="dock-cover-expand-hint">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </div>
+      </div>
+
+      <div class="dock-info">
+        <h5 id="dockTitle">Ожидание выбора</h5>
+        <p id="dockArtist" onclick="openArtistByName(this.innerText)">Выберите трек из каталога</p>
+      </div>
+    </div>
+
+    <div class="dock-controls">
+      <div class="control-buttons">
+        <button class="ctrl-btn ctrl-step" onclick="prevTrack()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="3"/></svg>
+        </button>
+        <button class="ctrl-btn ctrl-play" id="playBtn" onclick="togglePlay()">
+          <svg id="playIcon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+        <button class="ctrl-btn ctrl-step" onclick="nextTrack()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="3"/></svg>
+        </button>
+      </div>
+
+      <div class="slider-container">
+        <span id="currentTime">0:00</span>
+        <input type="range" id="progressBar" class="range-input" value="0" min="0" max="100">
+        <span id="duration">0:00</span>
+      </div>
+    </div>
+
+    <div class="dock-right">
+      <button class="dock-action-icon" id="dockDislikeBtn" onclick="dislikeCurrentTrack()" title="Не нравится (меньше таких)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          <line x1="3" y1="3" x2="21" y2="21"/>
+        </svg>
+      </button>
+
+      <button class="dock-action-icon dock-heart-btn" id="dockHeartBtn" onclick="toggleCurrentTrackLike()" title="Любимое">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </button>
+
+      <button class="lyrics-btn" id="lyricsBtn" onclick="toggleKaraoke()" title="Текст песни">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+      </button>
+
+      <button class="volume-btn" id="volumeBtn" onclick="toggleMute()" title="Без звука">
+        <svg id="volumeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+      </button>
+
+      <input type="range" id="volumeSlider" class="volume-input" min="0" max="1" step="0.01" value="1">
+    </div>
+  </div>
+
+  <!-- ПОЛНОЭКРАННЫЙ РЕЖИМ ПЛЕЕРА -->
+  <div class="fullscreen-player" id="fullscreenPlayer">
+    <button class="fs-close-btn" onclick="closeFullscreenPlayer()" title="Свернуть (Esc)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+
+    <div class="fs-content">
+      <div class="fs-cover-box" id="fsCoverBox">
+        <img id="fsCover" class="fs-cover" referrerpolicy="no-referrer" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' fill='%2315161b'/%3E">
+        <video id="fsCanvasVideo" class="canvas-video" autoplay loop muted playsinline></video>
+        
+        <div class="fs-cover-overlay">
+          <button class="fs-overlay-btn fs-overlay-queue" onclick="switchTab('playlists'); closeFullscreenPlayer();" title="Плейлисты">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+
+          <div class="fs-ctrl-center">
+            <button class="fs-overlay-btn" onclick="prevTrack()" title="Предыдущий">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="3"/></svg>
+            </button>
+            <button class="fs-overlay-btn fs-overlay-play" id="fsPlayBtn" onclick="togglePlay()" title="Воспроизведение / Пауза">
+              <svg id="fsPlayIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </button>
+            <button class="fs-overlay-btn" onclick="nextTrack()" title="Следующий">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="3"/></svg>
+            </button>
+          </div>
+
+          <button class="fs-overlay-btn fs-overlay-heart" id="fsHeartBtn" onclick="toggleCurrentTrackLike()" title="Любимое">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="fs-meta">
+        <h2 id="fsTitle" class="fs-title">Ожидание выбора</h2>
+        <p id="fsArtist" class="fs-artist" onclick="closeFullscreenPlayer(); openArtistByName(this.innerText)">Выберите трек из каталога</p>
+      </div>
+
+      <div class="fs-progress-interactive-zone">
+        <input type="range" id="fsProgressBar" class="range-input" value="0" min="0" max="100">
+        <div class="fs-time-row">
+          <span id="fsCurrentTime">0:00</span>
+          <span id="fsDuration">0:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ПОЛНОЭКРАННЫЙ РЕЖИМ ТЕКСТА (КАРАОКЕ) -->
+  <div class="karaoke-overlay" id="karaokeOverlay">
+    <button class="fs-close-btn" onclick="toggleKaraoke()" title="Закрыть текст (Esc)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+
+    <div class="karaoke-container">
+      <div class="karaoke-left">
+        <div class="karaoke-cover-box" id="kCoverBox">
+          <img id="kCover" class="karaoke-cover" referrerpolicy="no-referrer" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' fill='%2318181b'/%3E">
+          <video id="kCanvasVideo" class="canvas-video" autoplay loop muted playsinline></video>
+          
+          <div class="karaoke-cover-overlay">
+            <button class="fs-overlay-btn fs-overlay-queue" onclick="switchTab('playlists'); toggleKaraoke();" title="Плейлисты">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </button>
+
+            <div class="fs-ctrl-center">
+              <button class="fs-overlay-btn" onclick="prevTrack()" title="Предыдущий">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="3"/></svg>
+              </button>
+              <button class="fs-overlay-btn fs-overlay-play" id="kPlayBtn" onclick="togglePlay()" title="Воспроизведение / Пауза">
+                <svg id="kPlayIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </button>
+              <button class="fs-overlay-btn" onclick="nextTrack()" title="Следующий">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="3"/></svg>
+              </button>
+            </div>
+
+            <button class="fs-overlay-btn fs-overlay-heart" id="kHeartBtn" onclick="toggleCurrentTrackLike()" title="Любимое">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="karaoke-meta">
+          <h2 id="kTitle">Название</h2>
+          <p id="kArtist" onclick="toggleKaraoke(); openArtistByName(this.innerText)">Исполнитель</p>
+        </div>
+
+        <div class="karaoke-progress-zone">
+          <input type="range" id="kProgressBar" class="range-input" value="0" min="0" max="100">
+          <div class="karaoke-time-row">
+            <span id="kCurrentTime">0:00</span>
+            <span id="kDuration">0:00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="karaoke-right" id="karaokeLinesContainer">
+        <div class="k-line active">Загрузка текста...</div>
+      </div>
+
+      <div class="mobile-lyrics-player-bar">
+        <div class="m-lyrics-track-row">
+          <div class="m-lyrics-meta">
+            <img id="mKCover" class="m-lyrics-cover" referrerpolicy="no-referrer" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect width='100%25' height='100%25' fill='%2318181b'/%3E%3C/svg%3E">
+            <div class="m-lyrics-info">
+              <h4 id="mKTitle">Название трека</h4>
+              <p id="mKArtist">Исполнитель</p>
+            </div>
+          </div>
+          <div class="m-lyrics-actions">
+            <button class="dock-heart-btn" id="mKHeartBtn" onclick="toggleCurrentTrackLike()" title="Любимое">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>
+            <button class="m-lyrics-play-btn" id="mKPlayBtn" onclick="togglePlay()">
+              <svg id="mKPlayIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="m-lyrics-progress-wrap">
+          <span id="mKCurrentTime">0:00</span>
+          <input type="range" id="mKProgressBar" class="m-lyrics-progress-bar" value="0" min="0" max="100">
+          <span id="mKDuration">0:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА ВЫБОРА ИМПОРТА -->
+  <div class="import-flow-overlay" id="importOptionsModal" onclick="if(event.target===this) closeImportOptionsModal()">
+    <div class="import-flow-card">
+      <div style="text-align: center; margin-bottom: 6px;">
+        <h3 style="font-size: 20px; font-weight: 800;">Импорт музыки</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Выберите удобный способ импорта треков</p>
+      </div>
+
+      <div style="display: flex; justify-content: center; margin: 14px 0;">
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </svg>
+      </div>
+
+      <div class="settings-card" style="padding: 4px 0;">
+        <div class="settings-row" onclick="showToast('Импорт по ссылке временно в разработке. Используйте импорт списка!')">
+          <div class="sr-left">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <div>
+              <div style="font-size: 15px; font-weight: 700;">Импортировать из сервиса</div>
+              <div style="font-size: 12px; color: var(--text-muted);">В разработке</div>
+            </div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+
+        <div class="settings-row" onclick="openImportTextInputModal()">
+          <div class="sr-left">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <div>
+              <div style="font-size: 15px; font-weight: 700;">Импорт списка</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Вставьте список треков в виде текста</div>
+            </div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <button class="btn-sec-action" onclick="closeImportOptionsModal()" style="width: 100%;">Назад</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА ВВОДА СПИСКА ТРЕКОВ ТЕКСТОМ -->
+  <div class="import-flow-overlay" id="importTextModal" onclick="if(event.target===this) closeImportTextModal()">
+    <div class="import-flow-card">
+      <div style="text-align: center; margin-bottom: 12px;">
+        <h3 style="font-size: 20px; font-weight: 800;">Импорт списка</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Вставьте любое количество треков (каждый с новой строки)</p>
+      </div>
+
+      <textarea id="importTextListInput" placeholder="Horizonte de Diamante&#10;Montagem Espaco Renicht Slowed&#10;CORRUPÇÃO FUNK&#10;feeling of emptiness" style="width: 100%; height: 180px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 16px; padding: 14px; color: #fff; font-family: inherit; font-size: 14px; outline: none; resize: none;"></textarea>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+        <button class="btn-main-action" id="btnStartTextImport" onclick="startTextImport()" style="width: 100%;">Импортировать все треки</button>
+        <button class="btn-sec-action" onclick="closeImportTextModal()" style="width: 100%;">Назад</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА ПОДТВЕРЖДЕНИЯ ИМПОРТА -->
+  <div class="import-flow-overlay" id="importConfirmModal" onclick="if(event.target===this) closeImportConfirmModal()">
+    <div class="import-flow-card">
+      <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
+        <div class="import-preview-cover-box">
+          <img id="importPreviewImg" src="" alt="Cover">
+        </div>
+        <h3 id="importPreviewTitle" style="font-size: 20px; font-weight: 800; margin-top: 4px;">Плейлист</h3>
+        <p id="importPreviewTracksCount" style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">0 треков</p>
+      </div>
+
+      <div class="settings-card" style="padding: 4px 0;">
+        <div class="settings-row" onclick="selectImportTarget('new')">
+          <div class="sr-left">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span style="font-size: 15px; font-weight: 600;">Создать новый плейлист</span>
+          </div>
+          <div class="sr-right" id="checkImportTargetNew">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+
+        <div class="settings-row" onclick="selectImportTarget('favs')">
+          <div class="sr-left">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span style="font-size: 15px; font-weight: 600;">Любимые</span>
+          </div>
+          <div class="sr-right" id="checkImportTargetFavs" style="display: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+        <button class="btn-main-action" onclick="confirmImportPlaylist()" style="width: 100%;">Подтвердить</button>
+        <button class="btn-sec-action" onclick="closeImportConfirmModal()" style="width: 100%;">Назад</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- МОДАЛКА ПРИВЯЗКИ TELEGRAM ЧЕРЕЗ БОТА -->
+  <div class="import-flow-overlay" id="tgLinkModal" onclick="if(event.target===this) closeTgLinkModal()">
+    <div class="import-flow-card" style="text-align: center;">
+      <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+        <div style="width: 60px; height: 60px; border-radius: 50%; background: #0088cc; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,136,204,0.4);">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+        </div>
+      </div>
+
+      <h3 style="font-size: 20px; font-weight: 800;">Привязка к Telegram</h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin: 6px 0 14px 0;">Нажмите кнопку перехода в бота @turovfyaubot или введите ключ вручную:</p>
+
+      <div style="background: rgba(255,255,255,0.06); border: 1px dashed var(--border-light); border-radius: 16px; padding: 12px; margin-bottom: 12px;">
+        <span id="tgLinkCodeDisplay" style="font-size: 24px; font-weight: 900; letter-spacing: 2px; color: #ffffff;">TF-XXXXXX</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <a id="tgBotLinkBtn" href="https://t.me/turovfyaubot" target="_blank" class="btn-main-action" style="text-decoration: none; background: #0088cc; color: #fff;">Открыть @turovfyaubot</a>
+        <button class="btn-main-action" style="background: rgba(255,255,255,0.08); color:#fff;" onclick="manualConfirmTgLink()">Ввести ключ из бота</button>
+        <button class="btn-sec-action" onclick="closeTgLinkModal()">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модалка Авторизации (Google + Telegram) -->
+  <div class="modal-overlay" id="authModal">
+    <div class="auth-card">
+      <button class="close-modal" onclick="closeAuthModal()">✕</button>
+      <h3>Вход в TurovFy</h3>
+      <p>Войдите через Google или по защищённому ключу Telegram-бота.</p>
+      
+      <div class="google-slot-wrapper" style="margin-bottom: 14px;">
+        <div id="googleBtnSlot"></div>
+      </div>
+
+      <button class="btn-main-action" onclick="startTelegramLogin()" style="width: 100%; background: #0088cc; color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+        <span>Войти через Telegram</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Модалка Уровня XP -->
+  <div class="modal-overlay" id="xpModal" onclick="if(event.target === this) closeXpModal()">
+    <div class="auth-card">
+      <button class="close-modal" onclick="closeXpModal()">✕</button>
+      <div class="xp-modal-body">
+        <div class="xp-level-badge" id="xpCurrentLevelBadge">1</div>
+        <h3>Уровень</h3>
+        <p style="margin-bottom: 8px;">Уровень отображает активность <span id="xpUsernameSpan">maestrov</span> в приложении.</p>
+        
+        <div class="xp-bar-container">
+          <div class="xp-bar-fill" id="xpBarFill" style="width: 0%;"></div>
+          <span class="xp-bar-text" id="xpProgressText">0 / 100 XP</span>
+          <span class="xp-bar-text" id="xpNextLevelBadge" style="background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 6px; font-size: 11px;">2</span>
+        </div>
+
+        <div class="xp-list">
+          <div class="xp-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            <span>Прослушивание треков (+5 XP)</span>
+          </div>
+          <div class="xp-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Ежедневные заходы (+20 XP)</span>
+          </div>
+          <div class="xp-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Использование функций</span>
+          </div>
+          <div class="xp-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+            <span>И другое</span>
+          </div>
+        </div>
+
+        <button class="btn-main-action" style="width: 100%; margin-top: 10px;" onclick="closeXpModal()">Понятно</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-popup" id="toast">
+    <span id="toastMsg">Уведомление</span>
+  </div>
+
+  <audio id="audioElement" preload="auto" playsinline webkit-playsinline></audio>
+
+  <!-- Скрипты разделены по модулям в строгом порядке зависимости -->
+  <script src="/assets/js/core.js"></script>
+  <script src="/assets/js/player.js"></script>
+  <script src="/assets/js/catalog.js"></script>
+  <script src="/assets/js/settings.js"></script>
+</body>
+</html>
