@@ -30,17 +30,13 @@ jobs:
             echo '{"name": "turovfy-mobile", "version": "1.0.0", "dependencies": {"@capacitor/android": "^6.0.0", "@capacitor/cli": "^6.0.0", "@capacitor/core": "^6.0.0"}}' > package.json
           fi
 
-      - name: Создание capacitor.config.json если отсутствует
-        run: |
-          if [ ! -f capacitor.config.json ]; then
-            echo '{"appId": "com.turovfy.app", "appName": "TurovFy", "webDir": ".", "bundledWebRuntime": false, "server": {"androidScheme": "https", "cleartext": true}, "android": {"allowMixedContent": true, "captureInput": true}}' > capacitor.config.json
-          fi
-
-      - name: Установка зависимостей Capacitor
+      - name: Установка зависимостей и инициализация Capacitor
         run: |
           npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init TurovFy com.turovfy.app --web-dir . --yes
           npx cap add android
-          npx cap sync android
+          npx cap update android
 
       - name: Добавление сетевых разрешений Android
         run: |
