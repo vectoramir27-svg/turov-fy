@@ -24,6 +24,13 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Подготовка структуры веб-директории для Capacitor
+        run: |
+          mkdir -p www
+          # Перемещаем index.html и папку assets в папку www для Capacitor
+          if [ -f index.html ]; then cp index.html www/; fi
+          if [ -d assets ]; then cp -r assets www/; fi
+
       - name: Создание package.json если отсутствует
         run: |
           if [ ! -f package.json ]; then
