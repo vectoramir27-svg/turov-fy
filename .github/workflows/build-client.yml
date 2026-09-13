@@ -24,44 +24,86 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Подготовка структуры веб-директории для Capacitor
+      - name: Подготовка веб-папки www
         run: |
           rm -rf www
           mkdir -p www
-          if [ -f index.html ]; then cp index.html www/; fi
-          if [ -d assets ]; then cp -r assets www/; fi
-          ls -la www/
+          cp index.html www/
+          cp -r assets www/
+          echo "Веб-ресурсы подготовлены:"
+          ls -la www
 
-      - name: Установка зависимостей и инициализация Capacitor
+      - name: Создание capacitor.config.json с сетевыми правилами
         run: |
-          npm install
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap add android
-          npx cap update android
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.turovfy.app",
+            "appName": "TurovFy",
+            "webDir": "www",
+            "bundledWebRuntime": false,
+            "server": {
+              "androidScheme": "http",
+              "cleartext": true,
+              "allowNavigation": [
+                "144.31.192.63:8000",
+                "144.31.192.63",
+                "*"
+              ]
+            }
+          }
+          EOF
 
-      - name: Настройка сетевых разрешений и Cleartext HTTP
+      - name: Создание package.json если отсутствует
+        run: |
+          if [ ! -f package.json ]; then
+            echo '{"name": "turovfy-mobile", "version": "1.0.0"}' > package.json
+          fi
+
+      - name: Установка Capacitor и синхронизация
+        run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap add android || true
+          npx cap sync android
+
+      - name: Настройка Cleartext HTTP и Network Security Config
         run: |
           mkdir -p android/app/src/main/res/xml
-          echo '<?xml version="1.0" encoding="utf-8"?>
+          cat << 'EOF' > android/app/src/main/res/xml/network_security_config.xml
+          <?xml version="1.0" encoding="utf-8"?>
           <network-security-config>
               <base-config cleartextTrafficPermitted="true">
                   <trust-anchors>
                       <certificates src="system" />
+                      <certificates src="user" />
                   </trust-anchors>
               </base-config>
-          </network-security-config>' > android/app/src/main/res/xml/network_security_config.xml
+              <domain-config cleartextTrafficPermitted="true">
+                  <domain includeSubdomains="true">144.31.192.63</domain>
+                  <domain includeSubdomains="true">localhost</domain>
+              </domain-config>
+          </network-security-config>
+          EOF
 
-          sed -i '/<application/c\<application android:networkSecurityConfig="@xml/network_security_config" android:usesCleartextTraffic="true" android:appComponentFactory="androidx.core.app.CoreComponentFactory" style="@style/AppTheme">' android/app/src/main/AndroidManifest.xml
-          
+          # Применяем конфигурацию к манифесту
+          sed -i 's/<application/<application android:usesCleartextTraffic="true" android:networkSecurityConfig="@xml\/network_security_config"/' android/app/src/main/AndroidManifest.xml
+
+          # Гарантируем права на интернет
           if ! grep -q "android.permission.INTERNET" android/app/src/main/AndroidManifest.xml; then
             sed -i '/<application/i <uses-permission android:name="android.permission.INTERNET" />\n<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
+          fi
+
+      - name: Разрешение Mixed Content в MainActivity
+        run: |
+          MAIN_ACTIVITY="android/app/src/main/java/com/turovfy/app/MainActivity.java"
+          if [ -f "$MAIN_ACTIVITY" ]; then
+            sed -i '/public class MainActivity extends BridgeActivity {/a \    @Override\n    public void onStart() {\n        super.onStart();\n        android.webkit.WebView webView = (android.webkit.WebView) this.getBridge().getWebView();\n        if (webView != null) {\n            webView.getSettings().setMixedContentMode(android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);\n        }\n    }' "$MAIN_ACTIVITY"
           fi
 
       - name: Сборка Debug APK через Gradle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug
 
       - name: Загрузка готового APK в артефакты
         uses: actions/upload-artifact@v4
