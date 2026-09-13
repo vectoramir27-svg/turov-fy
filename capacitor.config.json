@@ -2,11 +2,13 @@
   "appId": "com.turovfy.app",
   "appName": "TurovFy",
   "webDir": "www",
+  "bundledWebRuntime": false,
   "server": {
-    "androidScheme": "https",
-    "cleartext": true
-  },
-  "android": {
-    "allowMixedContent": true
+    "androidScheme": "http",
+    "cleartext": true,
+    "allowNavigation": [
+      "144.31.192.63:8000",
+      "144.31.192.63"
+    ]
   }
 }
