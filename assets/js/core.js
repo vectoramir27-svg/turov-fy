@@ -2,10 +2,8 @@ const GOOGLE_CLIENT_ID = "626469255866-clqnscvcv71s9baj7rs32u49ekmmertk.apps.goo
 
 // =========================================================================
 // ВРЕМЕННЫЙ ТУННЕЛЬ ДЛЯ МОБИЛЬНОГО ПРИЛОЖЕНИЯ (Cloudflare Tunnel URL)
-// Как только получишь ссылку в консоли Cloudflare, вставь её сюда вместо пустой строки:
-// Пример: const API_BASE_URL = "https://your-tunnel-name.trycloudflare.com";
 // =========================================================================
-const API_BASE_URL = "https://wheel-friday-consumption-ladder.trycloudflare.com/"; 
+const API_BASE_URL = "https://newly-events-clip-mandate.trycloudflare.com"; 
 
 // Глобальные переменные состояния
 let currentUser = null;
@@ -423,4 +421,9 @@ window.addEventListener('keydown', (e) => {
     if (typeof isKaraokeOpen !== 'undefined' && isKaraokeOpen && typeof toggleKaraoke === 'function') toggleKaraoke();
     closeXpModal();
   }
+});
+
+// Автозапуск авторизации и начальной проверки при загрузке приложения
+document.addEventListener("DOMContentLoaded", () => {
+  checkExistingAuth();
 });
