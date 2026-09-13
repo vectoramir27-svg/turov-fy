@@ -30,7 +30,7 @@ jobs:
           mkdir -p www
           cp index.html www/
           cp -r assets www/
-          echo "Файлы веб-интерфейса подготовлены:"
+          echo "Веб-директория собрана:"
           ls -la www
 
       - name: Создание capacitor.config.json
@@ -42,13 +42,8 @@ jobs:
             "webDir": "www",
             "bundledWebRuntime": false,
             "server": {
-              "androidScheme": "http",
               "cleartext": true,
-              "allowNavigation": [
-                "144.31.192.63:8000",
-                "144.31.192.63",
-                "*"
-              ]
+              "allowNavigation": ["*"]
             }
           }
           EOF
@@ -59,13 +54,13 @@ jobs:
             echo '{"name": "turovfy-mobile", "version": "1.0.0"}' > package.json
           fi
 
-      - name: Установка Capacitor и генерация проекта
+      - name: Установка зависимостей и синхронизация Capacitor
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap add android || true
           npx cap sync android
 
-      - name: Настройка Cleartext HTTP и Network Security Config
+      - name: Настройка глобального Cleartext в AndroidManifest и Security Config
         run: |
           mkdir -p android/app/src/main/res/xml
           cat << 'EOF' > android/app/src/main/res/xml/network_security_config.xml
@@ -77,22 +72,18 @@ jobs:
                       <certificates src="user" />
                   </trust-anchors>
               </base-config>
-              <domain-config cleartextTrafficPermitted="true">
-                  <domain includeSubdomains="true">144.31.192.63</domain>
-                  <domain includeSubdomains="true">localhost</domain>
-              </domain-config>
           </network-security-config>
           EOF
 
-          # Применяем конфигурацию к манифесту
-          sed -i 's/<application/<application android:usesCleartextTraffic="true" android:networkSecurityConfig="@xml\/network_security_config"/' android/app/src/main/AndroidManifest.xml
+          # Вшиваем атрибуты в application
+          sed -i 's/<application /<application android:usesCleartextTraffic="true" android:networkSecurityConfig="@xml\/network_security_config" /' android/app/src/main/AndroidManifest.xml
 
-          # Разрешения на работу с сетью
+          # Гарантируем права на интернет и сетевые сокеты
           if ! grep -q "android.permission.INTERNET" android/app/src/main/AndroidManifest.xml; then
             sed -i '/<application/i <uses-permission android:name="android.permission.INTERNET" />\n<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' android/app/src/main/AndroidManifest.xml
           fi
 
-      - name: Сборка Debug APK через Gradle
+      - name: Сборка Debug APK
         run: |
           cd android
           chmod +x gradlew
